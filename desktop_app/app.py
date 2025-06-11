@@ -6,11 +6,9 @@ This module provides the main desktop application for the ResGuard system.
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import threading
 import webbrowser
 import os
 import time
-from typing import Dict, Any
 
 from core.resource_manager import ResourceManager
 from core.thread_manager import ThreadManager
@@ -64,7 +62,7 @@ class DesktopApp:
         # Show login screen if authentication is enabled
         if config.get("security", "enable_authentication"):
             self.root.withdraw()  # Hide main window
-            login = LoginScreen(self.root, config, self._on_login_success)
+            LoginScreen(self.root, config, self._on_login_success)
         else:
             self._initialize_ui()
 
@@ -136,14 +134,10 @@ class DesktopApp:
 
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0)
-
+        tools_menu.add_command(label="Generate Report", command=self._generate_report)
         tools_menu.add_separator()
         tools_menu.add_command(label="Reset Resources", command=self._reset_resources)
         tools_menu.add_separator()
-
-
-
-
 
         # Add alerting if available
         if self.alerting_system:
@@ -180,7 +174,70 @@ class DesktopApp:
             self.status_var.set("Error loading state")
             messagebox.showerror("Error", "Failed to load system state")
 
+    def _generate_report(self):
+        """Generate resource usage report."""
+        try:
+            from reports.report_generator import ReportGenerator
+            from desktop_app.report_dialog import ReportDialog
 
+            # Show report configuration dialog
+            dialog = ReportDialog(self.root, self.config)
+            if dialog.result:
+                # Generate report with selected options
+                report_gen = ReportGenerator(
+                    self.resource_manager,
+                    self.system_monitor,
+                    self.config
+                )
+
+                report_path = report_gen.generate_report(
+                    time_range=dialog.result.get('time_range', 3600),  # Default 1 hour
+                    include_charts=dialog.result.get('include_charts', True),
+                    include_tables=dialog.result.get('include_tables', True),
+                    report_name=dialog.result.get('report_name', 'resource_usage_report')
+                )
+
+                if report_path:
+                    self.status_var.set(f"Report generated: {report_path}")
+                    if messagebox.askyesno("Report Generated", f"Report saved to:\n{report_path}\n\nWould you like to open it?"):
+                        webbrowser.open(f"file://{os.path.abspath(report_path)}")
+                else:
+                    self.status_var.set("Error generating report")
+                    messagebox.showerror("Error", "Failed to generate report")
+        except ImportError as e:
+            messagebox.showerror("Error", f"Report generation module not available: {e}")
+        except Exception as e:
+            self.status_var.set("Error generating report")
+            messagebox.showerror("Error", f"Error generating report: {e}")
+
+    def open_report_dialog(self):
+        """Open the report generation dialog and generate report."""
+        from desktop_app.report_dialog import ReportDialog
+        from reports.report_generator import ReportGenerator
+
+        dialog = ReportDialog(self.root, self.config)
+        if dialog.result is None:
+            return  # User cancelled
+
+        # Extract options from dialog result
+        options = dialog.result
+
+        # Generate report
+        generator = ReportGenerator(self.resource_manager, self.system_monitor, self.config)
+        report_path = generator.generate_report(
+            time_range=options['time_range'],
+            include_charts=options['include_charts'],
+            include_tables=options['include_tables'],
+            report_name=options['report_name']
+        )
+
+        if report_path:
+            messagebox.showinfo("Report Generated", f"Report successfully generated at:\n{report_path}")
+            # Open the report in the default browser
+            import webbrowser
+            webbrowser.open(f"file:///{report_path.replace('\\', '/')}")
+        else:
+            messagebox.showerror("Error", "Failed to generate the report.")
 
     def _reset_resources(self):
         """Reset resources to initial values."""
@@ -222,7 +279,7 @@ class DesktopApp:
         using the Banker's Algorithm to prevent deadlocks, optimize
         utilization, and provide real-time monitoring.
 
-        © 2025
+        2025
         Lakshya Kumar (Team Leader)
         Aman Rana (Team Member)
         Chitrance Dogra (Team Member)
