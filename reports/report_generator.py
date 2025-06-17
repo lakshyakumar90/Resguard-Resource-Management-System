@@ -1,12 +1,9 @@
 import os
 import time
-import json
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from datetime import datetime
+from typing import Dict, List, Optional
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from matplotlib.backends.backend_agg import FigureCanvasAgg
-import pandas as pd
 import base64
 from io import BytesIO
 
