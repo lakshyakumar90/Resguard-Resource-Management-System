@@ -1,10 +1,3 @@
-"""
-Report Generator Module
-
-This module provides functionality to generate HTML reports containing
-resource usage data, charts, and tabular information.
-"""
-
 import os
 import time
 import json
@@ -23,19 +16,8 @@ from utils.config import Config
 
 
 class ReportGenerator:
-    """
-    Generates comprehensive HTML reports with resource usage data and visualizations.
-    """
-    
     def __init__(self, resource_manager: ResourceManager, system_monitor: SystemMonitor, config: Config):
-        """
-        Initialize the report generator.
-        
-        Args:
-            resource_manager: Resource manager instance
-            system_monitor: System monitor instance
-            config: Configuration object
-        """
+
         self.resource_manager = resource_manager
         self.system_monitor = system_monitor
         self.config = config
@@ -46,18 +28,7 @@ class ReportGenerator:
         
     def generate_report(self, time_range: int = 3600, include_charts: bool = True, 
                        include_tables: bool = True, report_name: str = "resource_usage_report") -> Optional[str]:
-        """
-        Generate a comprehensive resource usage report.
-        
-        Args:
-            time_range: Time range in seconds for historical data
-            include_charts: Whether to include charts in the report
-            include_tables: Whether to include tables in the report
-            report_name: Base name for the report file
-            
-        Returns:
-            str: Path to the generated report file, or None if generation failed
-        """
+
         try:
             # Generate timestamp for unique filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -82,8 +53,7 @@ class ReportGenerator:
                 
             return report_path
             
-        except Exception as e:
-            print(f"Error generating report: {e}")
+        except Exception:
             return None
     
     def _generate_html_report(self, system_state: Dict, system_metrics: Dict, 

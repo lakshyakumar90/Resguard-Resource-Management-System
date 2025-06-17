@@ -1,38 +1,14 @@
-"""
-Resource Manager Module
-
-This module implements the central resource management logic for the ResGuard system.
-It coordinates resource allocation using the Banker's Algorithm and manages
-process registration, resource requests, and releases.
-"""
-
 import json
 import time
 import threading
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, Any
 
 from core.banker_algorithm import BankerAlgorithm
 
 
 class ResourceManager:
-    """
-    Central resource manager for the ResGuard system.
-
-    This class manages resource allocation, process registration, and
-    coordinates with the Banker's Algorithm to ensure safe allocation.
-    """
-
-    def __init__(self, available_resources: Dict[str, int], state_file: str = "system_state.json", reset_on_load: bool = False, debug_mode: bool = True, reset_allocations: bool = True):
-        """
-        Initialize the resource manager.
-
-        Args:
-            available_resources: Dictionary mapping resource names to quantities
-            state_file: Path to the file for state persistence
-            reset_on_load: Whether to reset resources to initial values when loading state
-            debug_mode: Whether to print debug information
-            reset_allocations: Whether to reset all allocations to 0 on startup
-        """
+    def __init__(self, available_resources: Dict[str, int], state_file: str = "system_state.json", reset_on_load: bool = False, debug_mode: bool = True, reset_allocations: bool = False):
+        
         self.initial_resources = available_resources.copy()  # Store initial resources
         self.debug_mode = debug_mode  # Whether to print debug information
         self.banker = BankerAlgorithm(available_resources, debug_mode=debug_mode)
@@ -45,10 +21,7 @@ class ResourceManager:
         self.reset_on_load = reset_on_load  # Whether to reset resources on load
         self.reset_allocations = reset_allocations  # Whether to reset allocations on startup
 
-        if self.debug_mode:
-            print(f"Resource Manager initialized with resources: {available_resources}")
-            if self.reset_allocations:
-                print("All allocations will be reset to 0 on startup")
+        # Debug prints removed
 
         # Start background thread for periodic state saving
         self.running = True
@@ -57,17 +30,7 @@ class ResourceManager:
 
     def register_process(self, process_id: str, max_resources: Dict[str, int],
                          metadata: Dict[str, Any] = None) -> bool:
-        """
-        Register a new process with the resource manager.
-
-        Args:
-            process_id: Unique identifier for the process
-            max_resources: Maximum resources the process may claim
-            metadata: Additional process information
-
-        Returns:
-            bool: True if process was registered successfully, False otherwise
-        """
+        
         with self.lock:
             if self.banker.register_process(process_id, max_resources):
                 self.process_info[process_id] = {
@@ -80,16 +43,7 @@ class ResourceManager:
             return False
 
     def request_resources(self, process_id: str, request: Dict[str, int]) -> bool:
-        """
-        Process a resource request from a process.
-
-        Args:
-            process_id: Unique identifier for the process
-            request: Dictionary of resources being requested
-
-        Returns:
-            bool: True if resources were allocated, False otherwise
-        """
+        
         with self.lock:
             result = self.banker.request_resources(process_id, request)
             if result:
@@ -100,16 +54,7 @@ class ResourceManager:
             return result
 
     def release_resources(self, process_id: str, release: Dict[str, int]) -> bool:
-        """
-        Process a resource release from a process.
-
-        Args:
-            process_id: Unique identifier for the process
-            release: Dictionary of resources being released
-
-        Returns:
-            bool: True if resources were released successfully, False otherwise
-        """
+        
         with self.lock:
             result = self.banker.release_resources(process_id, release)
             if result:
@@ -117,15 +62,7 @@ class ResourceManager:
             return result
 
     def remove_process(self, process_id: str) -> bool:
-        """
-        Remove a process and release all its resources.
-
-        Args:
-            process_id: Unique identifier for the process
-
-        Returns:
-            bool: True if process was removed successfully, False otherwise
-        """
+        
         with self.lock:
             result = self.banker.remove_process(process_id)
             if result:
@@ -134,12 +71,7 @@ class ResourceManager:
             return result
 
     def get_system_state(self) -> Dict:
-        """
-        Get the current state of the system.
-
-        Returns:
-            Dict: Current state including available resources, allocations, and process info
-        """
+        
         with self.lock:
             state = self.banker.get_state()
             state["process_info"] = self.process_info
@@ -147,12 +79,7 @@ class ResourceManager:
             return state
 
     def save_state(self) -> bool:
-        """
-        Save the current system state to a file.
-
-        Returns:
-            bool: True if state was saved successfully, False otherwise
-        """
+        
         try:
             with self.lock:
                 state = self.get_system_state()
@@ -161,16 +88,11 @@ class ResourceManager:
                 self.last_saved = time.time()
                 return True
         except Exception as e:
-            print(f"Error saving state: {e}")
+            # Print statement removed
             return False
 
     def load_state(self) -> bool:
-        """
-        Load system state from a file.
-
-        Returns:
-            bool: True if state was loaded successfully, False otherwise
-        """
+        
         try:
             with open(self.state_file, 'r') as f:
                 state = json.load(f)
@@ -180,14 +102,9 @@ class ResourceManager:
                 if self.reset_on_load:
                     # Use initial resources if resetting
                     available_resources = self.initial_resources.copy()
-                    if self.debug_mode:
-                        print("Using initial resources instead of saved resources")
-                        print(f"Initial resources: {available_resources}")
                 else:
                     # Use saved resources
                     available_resources = state["available"]
-                    if self.debug_mode:
-                        print(f"Loaded resources from state: {available_resources}")
 
                 # Recreate banker with appropriate resources
                 self.banker = BankerAlgorithm(available_resources, debug_mode=self.debug_mode)
@@ -198,15 +115,10 @@ class ResourceManager:
 
                 # Restore allocations only if not resetting them
                 if not self.reset_allocations:
-                    if self.debug_mode:
-                        print("Restoring previous allocations from state")
                     for pid, allocation in state["allocation"].items():
                         for resource, amount in allocation.items():
                             if amount > 0:
                                 self.banker.request_resources(pid, {resource: amount})
-                else:
-                    if self.debug_mode:
-                        print("Resetting all allocations to 0 as requested")
 
                 # Restore process info
                 self.process_info = state.get("process_info", {})
@@ -214,20 +126,45 @@ class ResourceManager:
 
                 return True
         except Exception as e:
-            print(f"Error loading state: {e}")
+            # Print statement removed
+            return False
+
+    def set_system_state(self, state: dict) -> bool:
+        
+        try:
+            with self.lock:
+                # Determine which resources to use
+                if self.reset_on_load:
+                    available_resources = self.initial_resources.copy()
+                else:
+                    available_resources = state["available"]
+
+                # Recreate banker with appropriate resources
+                self.banker = BankerAlgorithm(available_resources, debug_mode=self.debug_mode)
+
+                # Restore processes
+                for pid, max_claim in state.get("max_claim", {}).items():
+                    self.banker.register_process(pid, max_claim)
+
+                # Restore allocations only if not resetting them
+                if not self.reset_allocations:
+                    for pid, allocation in state.get("allocation", {}).items():
+                        for resource, amount in allocation.items():
+                            if amount > 0:
+                                self.banker.request_resources(pid, {resource: amount})
+
+                # Restore process info
+                self.process_info = state.get("process_info", {})
+                self.request_history = state.get("request_history", [])
+
+                return True
+        except Exception as e:
+            # Print statement removed
             return False
 
     def _log_event(self, event_type: str, process_id: str, resources: Dict[str, int],
                   success: bool = True) -> None:
-        """
-        Log a resource management event.
-
-        Args:
-            event_type: Type of event (register, request, release, remove)
-            process_id: Unique identifier for the process
-            resources: Resources involved in the event
-            success: Whether the event was successful
-        """
+        
         event = {
             "timestamp": time.time(),
             "type": event_type,
@@ -258,12 +195,7 @@ class ResourceManager:
         self.save_state()
 
     def reset_resources(self) -> bool:
-        """
-        Reset resources to their initial values and clear all allocations.
-
-        Returns:
-            bool: True if resources were reset successfully, False otherwise
-        """
+        
         with self.lock:
             try:
                 # Create a new banker with initial resources
@@ -274,15 +206,10 @@ class ResourceManager:
                 self.process_info = {}
                 self.request_history = []
 
-                if self.debug_mode:
-                    print("Resources reset to initial values:")
-                    for resource, amount in self.initial_resources.items():
-                        print(f"  {resource}: {amount}")
-                    print(f"Cleared {old_process_count} processes and all their allocations")
-                else:
-                    print("Resources and allocations reset successfully")
+                # Only keep essential print
+                print("Resetting resources to default values...")
 
                 return True
             except Exception as e:
-                print(f"Error resetting resources: {e}")
+                # Print statement removed
                 return False

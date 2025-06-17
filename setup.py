@@ -14,7 +14,7 @@ setup(
     description="Dynamic Resource Management System using Banker's Algorithm",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/lakshyakumar90/Resguard--Resource-Management-System",
+    url="https://github.com/lakshyakumar90/Resguard-Resource-Management-System",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

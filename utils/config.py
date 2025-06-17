@@ -1,10 +1,3 @@
-"""
-Configuration Module
-
-This module provides functionality to manage configuration settings
-for the ResGuard system.
-"""
-
 import json
 import os
 import copy
@@ -12,20 +5,8 @@ from typing import Dict, Any, Optional, List, Tuple, Union
 
 
 class Config:
-    """
-    Manages configuration settings for the ResGuard system.
-
-    This class provides methods to load, save, and access configuration
-    settings from a JSON file.
-    """
-
     def __init__(self, config_file: str = "config.json"):
-        """
-        Initialize the configuration manager.
-
-        Args:
-            config_file: Path to the configuration file
-        """
+      
         self.config_file = config_file
         self.config = self._load_default_config()
 
@@ -34,12 +15,7 @@ class Config:
             self.load()
 
     def _load_default_config(self) -> Dict[str, Any]:
-        """
-        Load default configuration settings.
-
-        Returns:
-            Dict: Default configuration
-        """
+        
         # Define the default configuration
         self.default_config = {
             "system": {
@@ -97,12 +73,7 @@ class Config:
         return copy.deepcopy(self.default_config)
 
     def load(self) -> bool:
-        """
-        Load configuration from file.
-
-        Returns:
-            bool: True if configuration was loaded successfully, False otherwise
-        """
+       
         try:
             with open(self.config_file, 'r') as f:
                 loaded_config = json.load(f)
@@ -110,37 +81,21 @@ class Config:
             # Update configuration with loaded values
             self._update_dict(self.config, loaded_config)
             return True
-        except Exception as e:
-            print(f"Error loading configuration: {e}")
+        except Exception:
             return False
 
     def save(self) -> bool:
-        """
-        Save configuration to file.
-
-        Returns:
-            bool: True if configuration was saved successfully, False otherwise
-        """
+        
         try:
             with open(self.config_file, 'w') as f:
                 json.dump(self.config, f, indent=2)
 
             return True
-        except Exception as e:
-            print(f"Error saving configuration: {e}")
+        except Exception:
             return False
 
     def get(self, section: str, key: Optional[str] = None) -> Any:
-        """
-        Get a configuration value.
-
-        Args:
-            section: Configuration section
-            key: Configuration key (optional)
-
-        Returns:
-            Any: Configuration value, or None if not found
-        """
+        
         if section not in self.config:
             return None
 
@@ -150,17 +105,7 @@ class Config:
         return self.config[section].get(key)
 
     def set(self, section: str, key: str, value: Any) -> bool:
-        """
-        Set a configuration value.
-
-        Args:
-            section: Configuration section
-            key: Configuration key
-            value: Configuration value
-
-        Returns:
-            bool: True if value was set successfully, False otherwise
-        """
+       
         if section not in self.config:
             self.config[section] = {}
 
@@ -168,22 +113,11 @@ class Config:
         return True
 
     def get_all(self) -> Dict[str, Any]:
-        """
-        Get the entire configuration.
-
-        Returns:
-            Dict: Configuration dictionary
-        """
+        
         return self.config.copy()
 
     def _update_dict(self, target: Dict, source: Dict) -> None:
-        """
-        Recursively update a dictionary with values from another dictionary.
-
-        Args:
-            target: Target dictionary to update
-            source: Source dictionary with new values
-        """
+        
         for key, value in source.items():
             if key in target and isinstance(target[key], dict) and isinstance(value, dict):
                 self._update_dict(target[key], value)
@@ -191,46 +125,26 @@ class Config:
                 target[key] = value
 
     def reset_to_defaults(self) -> bool:
-        """
-        Reset configuration to default values.
-
-        Returns:
-            bool: True if reset was successful, False otherwise
-        """
+        
         try:
             self.config = copy.deepcopy(self.default_config)
             return True
-        except Exception as e:
-            print(f"Error resetting configuration: {e}")
+        except Exception:
             return False
 
     def reset_section(self, section: str) -> bool:
-        """
-        Reset a specific configuration section to default values.
-
-        Args:
-            section: Configuration section to reset
-
-        Returns:
-            bool: True if reset was successful, False otherwise
-        """
+        
         if section not in self.default_config:
             return False
 
         try:
             self.config[section] = copy.deepcopy(self.default_config[section])
             return True
-        except Exception as e:
-            print(f"Error resetting section {section}: {e}")
+        except Exception:
             return False
 
     def validate(self) -> List[str]:
-        """
-        Validate the current configuration.
-
-        Returns:
-            List[str]: List of validation errors, empty if valid
-        """
+        
         errors = []
 
         # Validate system section
@@ -283,12 +197,7 @@ class Config:
         return errors
 
     def get_settings_metadata(self) -> Dict[str, List[Dict[str, Any]]]:
-        """
-        Get metadata about configuration settings for UI rendering.
-
-        Returns:
-            Dict: Dictionary of section metadata
-        """
+        
         return {
             "system": [
                 {"name": "state_dir", "type": "string", "label": "State Directory", "description": "Directory to store state files"},

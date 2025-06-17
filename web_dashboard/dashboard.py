@@ -1,35 +1,14 @@
-"""
-Dash Dashboard Module
-
-This module provides the Dash application for the ResGuard web dashboard.
-"""
-
 import dash
-from dash import dcc, html, Input, Output, callback
+from dash import dcc, html, Input, Output
 import plotly.graph_objs as go
-import plotly.express as px
-import pandas as pd
-import numpy as np
 import time
-from typing import Dict, Any, List
-
 
 from utils.system_monitor import SystemMonitor
 from utils.config import Config
 
 
 def create_dashboard(server, system_monitor: SystemMonitor, config: Config) -> dash.Dash:
-    """
-    Create and configure the Dash application.
-
-    Args:
-        server: Flask server
-        system_monitor: System monitor instance
-        config: Configuration object
-
-    Returns:
-        dash.Dash: Configured Dash application
-    """
+   
     # Create Dash app
     app = dash.Dash(
         __name__,
@@ -96,6 +75,7 @@ def create_dashboard(server, system_monitor: SystemMonitor, config: Config) -> d
                 ], className="mt-4")
             ], className="mt-4"),
 
+            # Process table will be displayed in the main index.html
 
         ], className="container")
     ])

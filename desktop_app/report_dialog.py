@@ -1,27 +1,12 @@
-"""
-Report Dialog Module
-
-This module provides a dialog for configuring report generation options.
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox
-from typing import Dict, Optional, Any
+from typing import Any
 
 
 class ReportDialog:
-    """
-    Dialog for configuring report generation options.
-    """
-    
+
     def __init__(self, parent: tk.Tk, config: Any):
-        """
-        Initialize the report dialog.
-        
-        Args:
-            parent: Parent window
-            config: Configuration object
-        """
+
         self.parent = parent
         self.config = config
         self.result = None

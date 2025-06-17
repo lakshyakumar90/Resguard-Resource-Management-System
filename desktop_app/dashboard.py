@@ -1,38 +1,15 @@
-"""
-Dashboard Module
-
-This module provides the main dashboard for the ResGuard desktop application.
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox
-import time
-import threading
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 from core.resource_manager import ResourceManager
 from utils.system_monitor import SystemMonitor
 
 
 class Dashboard(ttk.Frame):
-    """
-    Main dashboard for the ResGuard desktop application.
-    
-    This class provides a UI for monitoring resource usage and
-    managing resource allocations.
-    """
-    
     def __init__(self, parent, resource_manager: ResourceManager, 
                 system_monitor: SystemMonitor, config: Any):
-        """
-        Initialize the dashboard.
         
-        Args:
-            parent: Parent widget
-            resource_manager: Resource manager instance
-            system_monitor: System monitor instance
-            config: Configuration object
-        """
         super().__init__(parent)
         self.parent = parent
         self.resource_manager = resource_manager

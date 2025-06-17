@@ -1,31 +1,13 @@
-"""
-System Monitor Module
-
-This module provides functionality to monitor system resources
-using psutil and provides real-time metrics.
-"""
-
 import psutil
 import time
 import threading
-from typing import Dict, List, Callable, Any, Optional
+from typing import Dict, List, Any
 
 
 class SystemMonitor:
-    """
-    Monitors system resources and provides real-time metrics.
-    
-    This class uses psutil to collect information about CPU, memory,
-    disk, and network usage, and provides methods to access this data.
-    """
-    
+
     def __init__(self, update_interval: float = 1.0):
-        """
-        Initialize the system monitor.
-        
-        Args:
-            update_interval: Time between updates in seconds
-        """
+
         self.update_interval = update_interval
         self.lock = threading.RLock()
         self.running = True
@@ -140,25 +122,12 @@ class SystemMonitor:
             return self.metrics.copy()
             
     def get_history(self) -> Dict[str, List]:
-        """
-        Get the history of system metrics.
-        
-        Returns:
-            Dict: History of system metrics
-        """
+       
         with self.lock:
             return self.history.copy()
             
     def get_processes(self, sort_by: str = "cpu") -> List[Dict[str, Any]]:
-        """
-        Get information about running processes.
-        
-        Args:
-            sort_by: Field to sort by (cpu, memory)
-            
-        Returns:
-            List[Dict]: List of process information
-        """
+      
         processes = []
         
         for proc in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent', 'memory_percent']):

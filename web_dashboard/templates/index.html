@@ -54,7 +54,80 @@
                         <h2>Interactive Dashboard</h2>
                     </div>
                     <div class="card-body">
-                        <iframe src="/dashboard/" style="width: 100%; height: 800px; border: none;"></iframe>
+                        <iframe src="/dashboard/" style="width: 100%; height: 500px; border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2>Current Allocations</h2>
+                            <div>
+                                <button id="refreshAllocations" class="btn btn-sm btn-outline-primary">Refresh</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="allocationsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Process ID</th>
+                                        <th>CPU</th>
+                                        <th>Memory</th>
+                                        <th>Disk</th>
+                                        <th>Network</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="allocationsTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center">Loading allocations...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2>Top Processes</h2>
+                            <div>
+                                <button id="sortByCPU" class="btn btn-sm btn-outline-primary">Sort by CPU</button>
+                                <button id="sortByMemory" class="btn btn-sm btn-outline-primary ml-2">Sort by Memory</button>
+                                <button id="refreshProcesses" class="btn btn-sm btn-outline-primary ml-2">Refresh</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="processesTable">
+                                <thead>
+                                    <tr>
+                                        <th>PID</th>
+                                        <th>Name</th>
+                                        <th>User</th>
+                                        <th>CPU %</th>
+                                        <th>Memory %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="processesTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center">Loading processes...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -65,8 +138,168 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initial data load
+            loadProcesses('cpu');
+            loadAllocations();
+            
+            // Set up refresh interval (every 10 seconds)
+            setInterval(function() {
+                loadProcesses(currentSortBy);
+                loadAllocations();
+            }, 10000);
+            
+            // Track current sort option
+            let currentSortBy = 'cpu';
+            
+            // Sort buttons
+            $('#sortByCPU').click(function() {
+                currentSortBy = 'cpu';
+                loadProcesses('cpu');
+            });
+            
+            $('#sortByMemory').click(function() {
+                currentSortBy = 'memory';
+                loadProcesses('memory');
+            });
+            
+            // Refresh buttons
+            $('#refreshProcesses').click(function() {
+                loadProcesses(currentSortBy);
+            });
+            
+            $('#refreshAllocations').click(function() {
+                loadAllocations();
+            });
+            
+            // Load processes function
+            function loadProcesses(sortBy) {
+                $.ajax({
+                    url: '/api/system/processes?sort=' + sortBy,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        const tbody = $('#processesTableBody');
+                        tbody.empty();
+                        
+                        if (data && data.length > 0) {
+                            data.slice(0, 10).forEach(function(process) {
+                                tbody.append(`
+                                    <tr>
+                                        <td>${process.pid}</td>
+                                        <td>${escapeHtml(process.name)}</td>
+                                        <td>${escapeHtml(process.username)}</td>
+                                        <td>${process.cpu_percent.toFixed(1)}</td>
+                                        <td>${process.memory_percent.toFixed(1)}</td>
+                                    </tr>
+                                `);
+                            });
+                        } else {
+                            tbody.append(`
+                                <tr>
+                                    <td colspan="5" class="text-center">No process data available</td>
+                                </tr>
+                            `);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $('#processesTableBody').html(`
+                            <tr>
+                                <td colspan="5" class="text-center text-danger">Error loading process data</td>
+                            </tr>
+                        `);
+                    }
+                });
+            }
+            
+            // Load allocations function
+            function loadAllocations() {
+                $.ajax({
+                    url: '/api/system/allocations',
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        const tbody = $('#allocationsTableBody');
+                        tbody.empty();
+                        
+                        if (data && data.allocation) {
+                            const pids = Object.keys(data.allocation);
+                            
+                            if (pids.length > 0) {
+                                pids.forEach(function(pid) {
+                                    const allocation = data.allocation[pid];
+                                    const processInfo = data.process_info && data.process_info[pid] || {};
+                                    const status = processInfo.status || 'unknown';
+                                    
+                                    tbody.append(`
+                                        <tr>
+                                            <td>${pid}</td>
+                                            <td>${allocation.cpu}</td>
+                                            <td>${allocation.memory}</td>
+                                            <td>${allocation.disk}</td>
+                                            <td>${allocation.network}</td>
+                                            <td><span class="badge badge-${getStatusBadge(status)}">${status}</span></td>
+                                        </tr>
+                                    `);
+                                });
+                            } else {
+                                tbody.append(`
+                                    <tr>
+                                        <td colspan="6" class="text-center">No allocations found</td>
+                                    </tr>
+                                `);
+                            }
+                        } else {
+                            tbody.append(`
+                                <tr>
+                                    <td colspan="6" class="text-center">No allocation data available</td>
+                                </tr>
+                            `);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $('#allocationsTableBody').html(`
+                            <tr>
+                                <td colspan="6" class="text-center text-danger">Error loading allocation data</td>
+                            </tr>
+                        `);
+                    }
+                });
+            }
+            
+            // Helper function to get badge class based on status
+            function getStatusBadge(status) {
+                switch(status.toLowerCase()) {
+                    case 'running':
+                        return 'success';
+                    case 'registered':
+                        return 'info';
+                    case 'waiting':
+                        return 'warning';
+                    case 'error':
+                        return 'danger';
+                    default:
+                        return 'secondary';
+                }
+            }
+            
+            // Helper function to escape HTML
+            function escapeHtml(unsafe) {
+                if (unsafe === undefined || unsafe === null) return '';
+                return unsafe
+                     .toString()
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
+        });
+    </script>
 </body>
 </html>

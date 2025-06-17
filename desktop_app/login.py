@@ -1,31 +1,12 @@
-"""
-Login Screen Module
-
-This module provides the login screen for the ResGuard desktop application.
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, Dict, Any
 
 
 class LoginScreen(tk.Toplevel):
-    """
-    Login screen for the ResGuard desktop application.
-    
-    This class provides a login form with username and password fields,
-    and handles authentication.
-    """
-    
+
     def __init__(self, parent, config, on_login_success: Callable):
-        """
-        Initialize the login screen.
-        
-        Args:
-            parent: Parent widget
-            config: Configuration object
-            on_login_success: Callback function for successful login
-        """
+
         super().__init__(parent)
         self.parent = parent
         self.config = config
@@ -123,16 +104,7 @@ class LoginScreen(tk.Toplevel):
             messagebox.showerror("Login Error", "Invalid username or password")
             
     def _check_credentials(self, username: str, password: str) -> bool:
-        """
-        Check if credentials are valid.
-        
-        Args:
-            username: Username to check
-            password: Password to check
-            
-        Returns:
-            bool: True if credentials are valid, False otherwise
-        """
+
         # Get credentials from config
         enable_auth = self.config.get("security", "enable_authentication")
         

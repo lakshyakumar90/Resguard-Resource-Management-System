@@ -1,31 +1,13 @@
-"""
-Web Dashboard Application Module
-
-This module provides the Flask application for the ResGuard web dashboard.
-"""
-
 import os
-import json
-from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session
 from functools import wraps
-from typing import Dict, Any, Callable, List, Union
-
+from typing import Callable
 
 from utils.system_monitor import SystemMonitor
 from utils.config import Config
 
-
 def create_app(system_monitor: SystemMonitor, config: Config) -> Flask:
-    """
-    Create and configure the Flask application.
 
-    Args:
-        system_monitor: System monitor instance
-        config: Configuration object
-
-    Returns:
-        Flask: Configured Flask application
-    """
     app = Flask(__name__)
     app.secret_key = os.urandom(24)
 
@@ -96,6 +78,15 @@ def create_app(system_monitor: SystemMonitor, config: Config) -> Flask:
         sort_by = request.args.get("sort", "cpu")
         return jsonify(system_monitor.get_processes(sort_by=sort_by))
 
+    @app.route("/api/system/allocations")
+    @login_required
+    def api_allocations():
+        """API endpoint for resource allocation information."""
+        resource_manager = app.config.get("RESOURCE_MANAGER", None)
+        if resource_manager:
+            return jsonify(resource_manager.get_system_state())
+        else:
+            return jsonify({"error": "Resource manager not available"})
 
 
     return app
@@ -103,19 +94,8 @@ def create_app(system_monitor: SystemMonitor, config: Config) -> Flask:
 
 def run_app(app: Flask, host: str = "127.0.0.1", port: int = 5000,
            debug: bool = False, threaded: bool = True) -> None:
-    """
-    Run the Flask application.
 
-    Args:
-        app: Flask application
-        host: Host to bind to
-        port: Port to bind to
-        debug: Whether to run in debug mode
-        threaded: Whether the app is running in a thread
-    """
-    # If running in a thread, we need to disable debug mode to avoid errors
-    # with the reloader trying to use signals in a non-main thread
-    if threaded:
-        debug = False
+    # Always disable debug mode to avoid excessive logging
+    debug = False
 
     app.run(host=host, port=port, debug=debug, use_reloader=False)

@@ -1,14 +1,7 @@
-"""
-ResGuard: Dynamic Resource Management System
-
-Main entry point for the ResGuard application.
-"""
-
 import os
 import threading
 import argparse
 import time
-from typing import Dict, Any
 
 from core.resource_manager import ResourceManager
 from core.thread_manager import ThreadManager
@@ -56,20 +49,6 @@ def parse_arguments():
         action="store_false",
         dest="reset_resources",
         help="Do not reset resources to default values on startup"
-    )
-
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        default=True,  # Enable debug mode by default
-        help="Enable debug mode for detailed logging (default: True)"
-    )
-
-    parser.add_argument(
-        "--no-debug",
-        action="store_false",
-        dest="debug",
-        help="Disable debug mode"
     )
 
     parser.add_argument(
@@ -142,7 +121,7 @@ def main():
         available_resources,
         state_file,
         reset_on_load=True,
-        debug_mode=args.debug,
+        debug_mode=False,
         reset_allocations=args.reset_allocations
     )
 
@@ -157,42 +136,36 @@ def main():
 
     # Try to load previous state
     if os.path.exists(state_file):
-        print("Loading previous state...")
         resource_manager.load_state()
 
 
-
     # Create alerting system
-    print("Initializing alerting system...")
     alerting_system = AlertingSystem(resource_manager, system_monitor, config)
 
-    # Start alerting system if enabled
-    if args.enable_alerts or config.get("alerting", "enabled"):
+    # Use predefined alert settings from config.json
+    if config.get("alerting", "enabled") or args.enable_alerts:
         alerting_system.start()
-        if args.enable_alerts:
-            print("Alerting system force-enabled via command line argument")
 
 
 
     # Start web dashboard in a separate thread if not desktop-only
     if not args.desktop_only:
-        print("Starting web dashboard...")
         web_thread = threading.Thread(
             target=start_web_dashboard,
-            args=(system_monitor, config),
+            args=(system_monitor, resource_manager, config),
             daemon=True
         )
         web_thread.start()
 
     # Start desktop application if not web-only
     if not args.web_only:
-        print("Starting desktop application...")
         start_desktop_app(
             resource_manager,
             thread_manager,
             system_monitor,
             config,
-            alerting_system=alerting_system
+            alerting_system=alerting_system,
+            state_manager=state_manager
         )
     else:
         # If web-only, keep the main thread alive
@@ -200,9 +173,6 @@ def main():
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            print("Shutting down...")
-
-
             # Stop alerting system if enabled
             if config.get("alerting", "enabled"):
                 alerting_system.stop()
@@ -212,32 +182,38 @@ def main():
             system_monitor.shutdown()
 
 
-def start_web_dashboard(system_monitor, config):
+def start_web_dashboard(system_monitor, resource_manager, config):
     """Start the web dashboard."""
     # Create Flask app
     flask_app = create_app(system_monitor, config)
-
+    
+    # Store resource_manager in app config
+    flask_app.config["RESOURCE_MANAGER"] = resource_manager
+    
     # Create Dash app
     dash_app = create_dashboard(flask_app, system_monitor, config)
 
     # Run Flask app
     host = config.get("web_dashboard", "host")
     port = config.get("web_dashboard", "port")
-    debug = config.get("web_dashboard", "debug")
+    
+    # Always disable debug mode
+    debug = False
 
     # When running in a thread, we need to pass threaded=True
     run_app(flask_app, host=host, port=port, debug=debug, threaded=True)
 
 
 def start_desktop_app(resource_manager, thread_manager, system_monitor, config,
-                  alerting_system=None):
+                  alerting_system=None, state_manager=None):
     """Start the desktop application."""
     app = DesktopApp(
         resource_manager,
         thread_manager,
         system_monitor,
         config,
-        alerting_system=alerting_system
+        alerting_system=alerting_system,
+        state_manager=state_manager
     )
     app.run()
 

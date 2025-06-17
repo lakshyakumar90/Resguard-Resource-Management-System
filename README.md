@@ -1,9 +1,6 @@
 # ResGuard: Dynamic Resource Management System
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/python-3.7%2B-blue)](https://www.python.org/downloads/)
-
-A software project to dynamically allocate computing resources (e.g., memory, CPU, storage) using the Banker's Algorithm to prevent deadlocks, optimize utilization, and provide real-time monitoring.
+A streamlined system for dynamically allocating computing resources (e.g., memory, CPU, storage) using the Banker's Algorithm to prevent deadlocks, optimize utilization, and provide real-time monitoring with minimal console output.
 
 ![ResGuard Dashboard](docs/images/dashboard.png)
 
@@ -22,7 +19,8 @@ A software project to dynamically allocate computing resources (e.g., memory, CP
 - **Core Manager**: Implements Banker's Algorithm for safe resource allocation
 - **Desktop App**: Tkinter-based UI for resource management
 - **Web Dashboard**: Flask/Dash/Plotly for real-time visualization
-- **Alerting System**: Monitors resource usage and generates alerts when thresholds are exceeded
+- **Alerting System**: Monitors resource usage and generates alerts based on thresholds defined in config.json
+- **State Manager**: Handles saving and loading of system state
 
 ## Key Features
 
@@ -31,8 +29,9 @@ A software project to dynamically allocate computing resources (e.g., memory, CP
 - **Resource Reset**: Automatically resets allocations to 0 on startup for a clean slate
 - **State Persistence**: Saves and loads system state between runs
 - **Interactive Dashboards**: Real-time charts and visualizations of resource usage
-- **Alerting System**: Generates alerts when resource usage exceeds configurable thresholds
-- **Configurable**: Basic configuration options via settings UI and command-line arguments
+- **Streamlined Alerting System**: Generates alerts when resource usage exceeds thresholds defined in config.json
+- **Minimal Console Output**: Only shows essential system information
+- **Configuration via JSON**: All settings including alert thresholds configured through config.json
 
 ## Installation
 
@@ -45,7 +44,7 @@ A software project to dynamically allocate computing resources (e.g., memory, CP
 
 ```bash
 # Clone the repository
-git clone : https://github.com/lakshyakumar90/Resguard--Resource-Management-System.git
+git clone : https://github.com/lakshyakumar90/Resguard-Resource-Management-System.git
 cd resguard
 
 # Install dependencies
@@ -66,9 +65,6 @@ python main.py
 # Run with default settings (resets resources and allocations)
 python main.py
 
-# Run with debug output
-python main.py --debug
-
 # Run without resetting allocations
 python main.py --keep-allocations
 
@@ -77,7 +73,12 @@ python main.py --web-only
 
 # Run desktop application only
 python main.py --desktop-only
+
+# Enable alerts (regardless of config.json setting)
+python main.py --enable-alerts
 ```
+
+> **Note:** Debug mode has been disabled by default to reduce console output.
 
 ### Desktop Application
 
@@ -85,65 +86,114 @@ python main.py --desktop-only
 2. Log in to the desktop application (default: admin/admin)
 3. Request resources through the UI by entering process ID and resource amounts
 4. Monitor resource usage in real-time
-5. Use the Tools menu to reset resources or access settings
+5. Use the Tools menu to reset resources
+
+> **Note:** Alert settings are no longer configurable through the UI and must be set in config.json
 
 ### Web Dashboard
 
 1. Access the web dashboard at http://localhost:5000
 2. Log in with the same credentials as the desktop app
-3. View real-time resource usage charts
-4. Request and release resources through the web interface
-5. Access settings to configure the system
+3. View real-time resource usage charts and system performance metrics
+4. See currently allocated resources in a tabular format
+5. Monitor top processes by CPU and memory usage
 
 ## Configuration
 
-ResGuard can be configured through the `config.json` file or via the settings UI:
+ResGuard is configured exclusively through the `config.json` file:
 
 - **System**: State directory, save intervals, history size
 - **Resources**: Available CPU, memory, disk, and network resources
 - **Desktop App**: Window title, size, and refresh interval
-- **Web Dashboard**: Host, port, debug mode, and refresh interval
+- **Web Dashboard**: Host, port, and refresh interval
 - **Security**: Authentication settings
 - **Logging**: Log level, file, size, and backup count
-- **Alerting**: Warning and critical thresholds, cooldown periods
+- **Alerting**: Warning and critical thresholds, cooldown periods (only configurable via config.json)
+
+### Sample Alert Configuration
+
+```json
+"alerting": {
+  "enabled": true,
+  "thresholds": {
+    "cpu": {
+      "warning": 70,
+      "critical": 90
+    },
+    "memory": {
+      "warning": 70,
+      "critical": 90
+    },
+    "disk": {
+      "warning": 70,
+      "critical": 90
+    },
+    "network": {
+      "warning": 70,
+      "critical": 90
+    }
+  },
+  "cooldown_period": 300
+}
+```
 
 ## Architecture
 
-ResGuard follows a modular architecture:
+ResGuard follows a modular architecture with streamlined components:
 
 ```
 resguard/
 ├── core/               # Core logic
-│   ├── banker_algorithm.py     # Banker's Algorithm implementation
+│   ├── banker_algorithm.py     # Banker's Algorithm implementation (streamlined)
 │   ├── resource_manager.py     # Central resource management
-│   ├── thread_manager.py       # Concurrent task handling
+│   ├── thread_manager.py       # Concurrent task handling (simplified)
 │   ├── state_manager.py        # State persistence
-│   └── alerting_system.py      # Alerting system
+│   └── alerting_system.py      # Alerting system (config-driven)
 ├── desktop_app/        # Desktop UI
-│   ├── app.py                  # Main application
+│   ├── app.py                  # Main application (alert settings GUI removed)
 │   ├── dashboard.py            # Resource monitoring UI
-│   └── settings_dialog.py      # Settings UI
+│   └── login.py                # Login screen
 ├── web_dashboard/      # Web UI
 │   ├── app.py                  # Flask application
 │   ├── dashboard.py            # Dash/Plotly dashboard
 │   └── templates/              # HTML templates
 ├── utils/              # Utilities
 │   ├── system_monitor.py       # System monitoring
-│   └── config.py               # Configuration management
-└── tests/              # Unit tests
+│   └── config.py               # Configuration management (direct file-based)
+├── reports/            # Reporting system
+│   └── report_generator.py     # Report generation
+└── states/             # State storage
+    └── current_state.json      # Current system state
 ```
+
+### Key Code Optimizations
+
+1. **Banker's Algorithm**: Removed debug print statements for cleaner execution
+2. **Resource Manager**: Streamlined console output to essential messages only
+3. **Alerting System**: Simplified to use config.json settings only
+4. **Thread Manager**: Removed unnecessary functions and optimized execution
+5. **Desktop App**: Removed alert settings GUI components and related code
+6. **Web Dashboard**: Improved display of process allocations
 
 ## Development
 
-### Running Tests
+### Console Output and Logging
 
-```bash
-# Run all tests
-python -m unittest discover tests
+ResGuard has been configured to minimize console output. The only messages that will appear in the console are:
 
-# Run specific test
-python -m unittest tests.test_banker
-```
+1. "Initializing ResGuard components..." - When the system starts
+2. "Resetting resources to default values..." - When resources are reset to defaults
+3. Flask server startup messages (when running the web dashboard):
+   - "* Serving Flask app ..."
+   - "* Debug mode: off"  
+   - "WARNING: This is a development server..."
+   - "* Running on http://127.0.0.1:5000"
+   - "Press CTRL+C to quit"
+
+Critical alerts will still be logged by the alerting system, but they won't be displayed to the console. To access alert history:
+
+1. Use the desktop app's alert history view
+2. Check logs if file logging is enabled in config.json
 
 ### Contributing
 
@@ -153,9 +203,16 @@ python -m unittest tests.test_banker
 4. Push to the branch: `git push origin feature-name`
 5. Submit a pull request
 
-## License
+## Recent Updates
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Version 2.0 (June 2025)
+
+- **Simplified Console Output**: Removed unnecessary console logs to improve clarity
+- **Fixed Alert Settings**: Alert settings now exclusively configured through config.json
+- **Removed Debug Mode**: Reduced excessive diagnostic output
+- **Optimized Performance**: Removed redundant code and functions
+- **Enhanced Web Dashboard**: Improved visualization of process allocations
+- **Streamlined Code Base**: Eliminated unused functions and code paths
 
 ## Contributors
 

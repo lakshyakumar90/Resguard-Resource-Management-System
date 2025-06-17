@@ -1,15 +1,8 @@
-"""
-Alerting System Module
-
-This module provides functionality to monitor resource usage and generate
-alerts when thresholds are exceeded.
-"""
-
 import time
 import threading
 import logging
 import uuid
-from typing import Dict, List, Any, Optional
+from typing import Dict, List
 
 from utils.config import Config
 from utils.system_monitor import SystemMonitor
@@ -17,21 +10,10 @@ from core.resource_manager import ResourceManager
 
 
 class AlertingSystem:
-    """
-    Monitors resource usage and generates alerts when thresholds are exceeded.
-    
-    This class implements a configurable alerting system with console notifications.
-    """
+    """Monitors resource usage and generates alerts when thresholds are exceeded."""
     
     def __init__(self, resource_manager: ResourceManager, system_monitor: SystemMonitor, config: Config):
-        """
-        Initialize the alerting system.
-        
-        Args:
-            resource_manager: Resource manager instance
-            system_monitor: System monitor instance
-            config: Configuration object
-        """
+       
         self.resource_manager = resource_manager
         self.system_monitor = system_monitor
         self.config = config
@@ -54,9 +36,9 @@ class AlertingSystem:
         
         # Set up logging
         self.logger = logging.getLogger("alerting_system")
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.WARNING)  # Only show warnings and higher
         
-        # Load configuration
+        # Load configuration - alert settings are now fixed and can't be modified through GUI
         self.enabled = config.get("alerting", "enabled") if config.get("alerting", "enabled") is not None else True
         
         # Set default thresholds if not in config
@@ -71,10 +53,10 @@ class AlertingSystem:
         # Set default cooldown period if not in config
         self.cooldown_period = config.get("alerting", "cooldown_period") if config.get("alerting", "cooldown_period") is not None else 300  # seconds
         
+
     def start(self):
         """Start the alerting system."""
         if not self.enabled:
-            self.logger.info("Alerting system is disabled in configuration")
             return
             
         with self.lock:
@@ -84,7 +66,6 @@ class AlertingSystem:
             self.running = True
             self.alert_thread = threading.Thread(target=self._alert_loop, daemon=True)
             self.alert_thread.start()
-            self.logger.info("Alerting system started")
             
     def stop(self):
         """Stop the alerting system."""
@@ -93,15 +74,9 @@ class AlertingSystem:
             if self.alert_thread:
                 self.alert_thread.join(timeout=1.0)
                 self.alert_thread = None
-            self.logger.info("Alerting system stopped")
             
     def get_alert_history(self) -> List[Dict]:
-        """
-        Get the alert history.
-        
-        Returns:
-            List[Dict]: History of alerts
-        """
+        """Get the alert history."""
         with self.lock:
             return self.alert_history.copy()
             
@@ -144,15 +119,7 @@ class AlertingSystem:
                         self.last_alert_time[resource] = current_time
                         
     def _generate_alert(self, resource: str, severity: str, current_value: float, threshold: float):
-        """
-        Generate an alert.
-        
-        Args:
-            resource: Resource type
-            severity: Alert severity (warning, critical)
-            current_value: Current resource usage
-            threshold: Threshold that was exceeded
-        """
+        """Generate an alert."""
         # Create alert
         alert = {
             "id": str(uuid.uuid4()),
@@ -173,47 +140,3 @@ class AlertingSystem:
             
         # Log the alert
         self.logger.warning(f"Alert generated: {alert['message']}")
-        
-        # Send notification
-        self._send_alert_notifications(alert)
-        
-    def _send_alert_notifications(self, alert: Dict):
-        """
-        Send notifications for an alert.
-        
-        Args:
-            alert: Alert information
-        """
-        # Prepare alert message
-        resource = alert["resource"]
-        severity = alert["severity"]
-        value = alert["current_value"]
-        threshold = alert["threshold"]
-        
-        subject = f"ResGuard {severity.upper()} Alert: {resource} usage at {value:.1f}%"
-        message = f"""
-        ResGuard Alert
-        --------------
-        Resource: {resource}
-        Severity: {severity.upper()}
-        Current Value: {value:.1f}%
-        Threshold: {threshold}%
-        Time: {time.strftime('%Y-%m-%d %H:%M:%S')}
-        """
-        
-        # Send to console
-        self._send_console_notification(subject, message)
-        
-    def _send_console_notification(self, subject: str, message: str):
-        """
-        Send a notification to the console.
-        
-        Args:
-            subject: Alert subject
-            message: Alert message
-        """
-        print("\n" + "=" * 80)
-        print(f"ALERT: {subject}")
-        print("-" * 80)
-        print(message)
-        print("=" * 80 + "\n")
