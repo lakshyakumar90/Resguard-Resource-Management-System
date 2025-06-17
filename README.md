@@ -45,7 +45,7 @@ A streamlined system for dynamically allocating computing resources (e.g., memor
 ```bash
 # Clone the repository
 git clone : https://github.com/lakshyakumar90/Resguard-Resource-Management-System.git
-cd resguard
+cd Resguard-Resource-Management-System
 
 # Install dependencies
 pip install -r requirements.txt
